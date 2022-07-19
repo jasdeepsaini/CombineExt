@@ -144,6 +144,43 @@ class CurrentValueRelayTests: XCTestCase {
         }
     }
 
+    func testCrash() {
+        final class ContainerClass {
+            static var receivedCompletion = false
+            static var receivedCancel = false
+            
+            // Cancellables comes after the relay.
+            let relay = CurrentValueRelay(StoredObject())
+            let relay2 = CurrentValueRelay(StoredObject())
+            var cancellables: Set<AnyCancellable>? = Set<AnyCancellable>()
+            
+            init() {
+                relay
+                    .withLatestFrom(relay2)
+                    .handleEvents(receiveCancel: {
+                        Self.receivedCancel = true
+                    })
+                    .sink(
+                        receiveCompletion: { _ in
+                            Self.receivedCompletion = true
+                        },
+                        receiveValue: { _ in }
+                    )
+                    .store(in: &cancellables!)
+//                
+//                relay.testing()
+//                relay.testing()
+            }
+        }
+        
+        let container = ContainerClass()
+        container.cancellables = nil
+//        var relay: CurrentValueRelay<StoredObject>? = CurrentValueRelay(StoredObject())
+//        relay?.testing()
+//        relay?.testing()
+//        relay = nil
+    }
+    
     func testFinishesOnDeinitWhenRelayIsAfterCancellables() {
         final class ContainerClass {
             static var receivedCompletion = false
